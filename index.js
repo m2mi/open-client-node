@@ -21,28 +21,28 @@ const https = require("https");
 const crypto = require('crypto');
 const fs = require('fs');
 const hash = crypto.createHash('sha256');
-let path = require('path');
-let cert = path.resolve('./', 'cert.pem');
-let privKey = path.resolve('./', 'privKey.pem');
-let authPayload = {"type": "device", protocol: "M2MI_AUTH_V1"};
-let publishPayload = {"ItemUniversallyUniqueID": "1024241260","BagPosition": {"PointElevationNumber": "0.000000","PointLatitudeNumber": "0.000000","PointLongitudeNumber": "0.000000"},"BagTag": {"TagID": "020406080013"},"BagPhysicalProperty": {"MeasurementUniversallyUniqueID": "kilograms","WeightMeasure": "55"},"BagSegment": {"FlightID": "UA666","DepStation": {"IATALocationCode": "AAA"},"ArrivalStation": {"IATALocationCode": "AAA"}},"BagActivity": {"ActivityCode": "Move","ActualDateTime": "2018-01-17T09:30:47Z","PointLongitudeNumber": {"IATALocationCode": "AAA"}}}
-let accessToken = null;
+var path = require('path');
+var cert = path.resolve('./', 'cert.pem');
+var privKey = path.resolve('./', 'privKey.pem');
+var authPayload = {"type": "device", protocol: "M2MI_AUTH_V1"};
+var publishPayload = {"ItemUniversallyUniqueID": "1024241260","BagPosition": {"PointElevationNumber": "0.000000","PointLatitudeNumber": "0.000000","PointLongitudeNumber": "0.000000"},"BagTag": {"TagID": "020406080013"},"BagPhysicalProperty": {"MeasurementUniversallyUniqueID": "kilograms","WeightMeasure": "55"},"BagSegment": {"FlightID": "UA666","DepStation": {"IATALocationCode": "AAA"},"ArrivalStation": {"IATALocationCode": "AAA"}},"BagActivity": {"ActivityCode": "Move","ActualDateTime": "2018-01-17T09:30:47Z","PointLongitudeNumber": {"IATALocationCode": "AAA"}}}
+var accessToken = null;
 
 const certInput = fs.createReadStream(cert);
-certInput.on('readable', () => {
+certInput.on('readable', function() {
     const certData = certInput.read();
     if (certData)
         hash.update(certData);
     else {
         authPayload["id"] = hash.digest('base64');
 
-        let pem = fs.readFileSync(privKey);
-        let key = pem.toString('ascii');
-        let sign = crypto.createSign('RSA-SHA256');
+        var pem = fs.readFileSync(privKey);
+        var key = pem.toString('ascii');
+        var sign = crypto.createSign('RSA-SHA256');
         sign.update(fs.readFileSync(cert).toString('ascii'));
         authPayload["secret"] = sign.sign(key, 'base64');
 
-        let authOptions = {
+        var authOptions = {
             hostname: 'portal.m2mi.net',
             port: 8181,
             path: '/m2mi/v2/auth/token',
@@ -53,12 +53,12 @@ certInput.on('readable', () => {
             }
         };
 
-        let authReq = https.request(authOptions, (res) => {
-            res.on('data', (d) => {
+        var authReq = https.request(authOptions, function(res) {
+            res.on('data', function(d) {
                 if (res.statusCode === 200) {
                     accessToken = JSON.parse(d).access
 
-                    let nodeOptions = {
+                    var nodeOptions = {
                         hostname: 'track.m2mi.net',
                         port: 8181,
                         path: '/node/v2/rs/node/data',
@@ -69,15 +69,15 @@ certInput.on('readable', () => {
                         }
                     };
 
-                    let nodeReq = https.request(nodeOptions, (res) => {
-                        res.on('data', (d) => {
+                    var nodeReq = https.request(nodeOptions, function(res) {
+                        res.on('data', function(d) {
                             if (res.statusCode === 200) {
                                 console.log(JSON.parse(d))
                             }
                         })
                     })
 
-                    nodeReq.on('error', (e) => {
+                    nodeReq.on('error', function(e) {
                         console.error(e);
                     });
 
@@ -87,7 +87,7 @@ certInput.on('readable', () => {
             });
         });
 
-        authReq.on('error', (e) => {
+        authReq.on('error', function(e) {
             console.error(e);
         });
 
